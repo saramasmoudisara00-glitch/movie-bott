@@ -2,52 +2,41 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Watch Movie</title>
-
+<title>Watch</title>
 <style>
 body {
-  margin: 0;
   background: black;
   color: white;
   text-align: center;
   font-family: Arial;
 }
-
-.title {
-  padding: 10px;
-  font-size: 20px;
-  color: #e50914;
-}
-
-iframe {
-  width: 100%;
-  height: 85vh;
-  border: none;
+a {
+  display: inline-block;
+  margin-top: 80px;
+  padding: 15px 20px;
+  background: #e50914;
+  color: white;
+  text-decoration: none;
+  border-radius: 10px;
+  font-size: 18px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="title">🎬 Loading...</div>
+<h2>🎬 Watch Movie</h2>
 
-<iframe id="player"></iframe>
+<a id="watch" target="_blank">▶️ Play Now</a>
 
 <script>
-const params = new URLSearchParams(window.location.search);
+const id = new URLSearchParams(location.search).get("id");
 
-const id = params.get("id");
-const type = params.get("type") || "movie";
-
-if (id) {
-  // 🎬 مصدر واحد بسيط (أكثر استقرار)
-  const url = `https://multiembed.mov/?video_id=${id}`;
-
-  document.getElementById("player").src = url;
-
-  document.querySelector(".title").innerText = "Now Playing 🎬";
+if(id){
+  document.getElementById("watch").href =
+    `https://multiembed.mov/?video_id=${id}`;
 } else {
-  document.body.innerHTML = "<h2>No movie selected</h2>";
+  document.body.innerHTML = "No movie selected";
 }
 </script>
 
