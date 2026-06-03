@@ -23,8 +23,10 @@
     }
 
     .title {
-      font-size: 20px;
+      font-size: 24px;
       margin: 10px 0;
+      font-weight: bold;
+      color: #E50914; /* لمسة باللون الأحمر لستايل احترافي */
     }
 
     .back {
@@ -44,7 +46,6 @@
 <div class="container">
   <div class="title" id="title">Loading...</div>
 
-  <!-- 🎬 video player -->
   <iframe id="player" allowfullscreen></iframe>
 
   <br>
@@ -52,34 +53,18 @@
 </div>
 
 <script>
-  // نجيب id من الرابط
-  const params = new URLSearchParams(window.location.search);
-  const id = params.get("id");
-
-  // نعرض id (لاحقاً نربطوه بـ TMDB)
-  document.getElementById("title").innerText = "Movie ID: " + id;
-
-  // 🎬 تشغيل الفيلم (demo player)
-  // لاحقاً نبدلوه بـ API حقيقي
-  document.getElementById("player").src =
-    "https://vidsrc.to/embed/movie/" + id;
-</script>
-
-</body>
-</html>
-<script>
   // 1. نجيب id من الرابط
   const params = new URLSearchParams(window.location.search);
   const id = params.get("id");
 
-  // مفتاح الـ API الخاص بـ TMDB (حطي المفتاح تاعك هنا)
+  // 🔴 حطي مفتاح الـ API الخاص بـ TMDB تاعك هنا بين علامتي التنصيص
   const TMDB_API_KEY = "YOUR_TMDB_API_KEY"; 
 
   // 2. تشغيل الفيلم في الـ Player مباشرة باستخدام الـ ID
   if (id) {
     document.getElementById("player").src = "https://vidsrc.to/embed/movie/" + id;
 
-    // 3. جلب اسم الفيلم من TMDB وعرضه في العنوان
+    // 3. جلب اسم الفيلم من TMDB وعرضه في العنوان باللغة العربية
     fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}&language=ar`)
       .then(response => response.json())
       .then(data => {
@@ -97,3 +82,5 @@
   }
 </script>
 
+</body>
+</html>
