@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Movie Watch</title>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      color: white;
+      font-family: Arial;
+      text-align: center;
+    }
+
+    h2 {
+      padding: 10px;
+    }
+
+    iframe {
+      width: 100%;
+      height: 80vh;
+      border: none;
+    }
+
+    .info {
+      padding: 10px;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+
+<h2 id="title">Loading movie...</h2>
+<div class="info" id="desc"></div>
+
+<iframe id="player" allowfullscreen></iframe>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const id = params.get("id");
+
+// TMDB API (لازم API KEY مجاني من themoviedb.org)
+const API_KEY = "2df7966b11c2fa17ff9606fd8eb710fb";
+
+// نجيب معلومات الفيلم
+fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${API_KEY}`)
+.then(res => res.json())
+.then(data => {
+    document.getElementById("title").innerText = data.title;
+    document.getElementById("desc").innerText = data.overview;
+
+    // نجيب trailer
+    return fetch(`https://api.themoviedb.org/3/movie/${id}/videos?api_key=${API_KEY}`);
+})
+.then(res => res.json())
+.then(videoData => {
+    let trailer = videoData.results.find(v => v.type === "Trailer");
+
+    if (trailer) {
+        document.getElementById("player").src =
+            `https://www.youtube.com/embed/${trailer.key}`;
+    } else {
+        document.getElementById("player").src =
+            "https://www.youtube.com/embed/dQw4w9WgXcQ";
+    }
+})
+.catch(err => {
+    document.getElementById("title").innerText = "Error loading movie";
+});
+</script>
+
+</body>
+</html>
