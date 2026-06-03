@@ -67,3 +67,33 @@
 
 </body>
 </html>
+<script>
+  // 1. نجيب id من الرابط
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+
+  // مفتاح الـ API الخاص بـ TMDB (حطي المفتاح تاعك هنا)
+  const TMDB_API_KEY = "YOUR_TMDB_API_KEY"; 
+
+  // 2. تشغيل الفيلم في الـ Player مباشرة باستخدام الـ ID
+  if (id) {
+    document.getElementById("player").src = "https://vidsrc.to/embed/movie/" + id;
+
+    // 3. جلب اسم الفيلم من TMDB وعرضه في العنوان
+    fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}&language=ar`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.title) {
+          document.getElementById("title").innerText = data.title;
+        } else {
+          document.getElementById("title").innerText = "مشاهدة الفيلم";
+        }
+      })
+      .catch(() => {
+        document.getElementById("title").innerText = "مشاهدة الفيلم";
+      });
+  } else {
+    document.getElementById("title").innerText = "خطأ: لم يتم تحديد فيلم!";
+  }
+</script>
+
