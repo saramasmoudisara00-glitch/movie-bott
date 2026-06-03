@@ -1,29 +1,15 @@
-import telebot
+Import telebot
 import requests
 import time
-import random
-import sqlite3
 from telebot import types
 
 BOT_TOKEN = "8605809944:AAFX_9TlV2CBfISMpAZJrtR25kU1DB2uIP4"
 TMDB_API_KEY = "2df7966b11c2fa17ff9606fd8eb710fb"
 VERCEL_SITE_URL = "https://movie-bott-five.vercel.app/"
-ADMIN_ID = 6386626600  # 👈 حطي الـ ID تاعكِ هنا كأدمن (تقدري تجيبيه من بوت @userinfobot)
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# 📦 إعداد قاعدة البيانات لحفظ المستخدمين والمفضلة
-def init_db():
-    conn = sqlite3.connect("saraflix.db")
-    cursor = conn.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS favorites (user_id INTEGER, media_id TEXT, title TEXT, media_type TEXT)")
-    conn.commit()
-    conn.close()
-
-init_db()
-
-# 🌐 برمجة زر المنيو الافتراضي السفلي لفتح الـ Web App
+# 🌐 برمجة زر المنيو تلقائياً لفتح الموقع كـ Web App
 try:
     bot.set_chat_menu_button(
         menu_button=types.MenuButtonWebApp(
@@ -32,228 +18,66 @@ try:
             web_app=types.WebAppInfo(url=VERCEL_SITE_URL)
         )
     )
+    print("✅ Menu Button set successfully!")
 except Exception as e:
-    print("Menu Button Error:", e)
-
-# 🏠 دالة عرض القائمة الرئيسية (أزرار الكيبورد العادية للراحة)
-def main_menu(message, is_admin=False):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-    btn_search = types.KeyboardButton("🔎 بحث عن فيلم/مسلسل")
-    btn_new = types.KeyboardButton("🎞️ أفلام جديدة")
-    btn_top = types.KeyboardButton("⭐ الأكثر مشاهدة")
-    btn_series = types.KeyboardButton("📺 مسلسلات")
-    btn_genres = types.KeyboardButton("🎭 حسب التصنيف")
-    btn_random = types.KeyboardButton("🎲 فيلم عشوائي")
-    btn_fav = types.KeyboardButton("❤️ أفلامي المحفوظة")
-    
-    markup.add(btn_search, btn_random)
-    markup.add(btn_new, btn_top)
-    markup.add(btn_series, btn_genres)
-    markup.add(btn_fav)
-    
-    if is_admin:
-        btn_admin = types.KeyboardButton("🧑‍💻 لوحة تحكم الأدمن")
-        markup.add(btn_admin)
-        
-    welcome_text = "🎬 **مرحباً بكِ في SaraFlix المطور!** 🍿\n\nاختر من الأزرار بالأسفل لاستكشاف المحتوى المتاح:"
-    bot.send_message(message.chat.id, welcome_text, reply_markup=markup, parse_mode="Markdown")
+    print("Error setting menu button:", e)
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    # تسجيل المستخدم في قاعدة البيانات
-    conn = sqlite3.connect("saraflix.db")
-    cursor = conn.cursor()
-    try:
-        cursor.execute("INSERT OR IGNORE INTO users VALUES (?)", (message.chat.id,))
-        conn.commit()
-    except:
-        pass
-    conn.close()
-    
-    is_admin = (message.chat.id == ADMIN_ID)
-    main_menu(message, is_admin)
+    welcome_text = "🎬 **SaraFlix** 🍿\n\nSend me any movie or series name!"
+    bot.reply_to(message, welcome_text, parse_mode="Markdown")
 
 @bot.message_handler(func=lambda message: True)
-def handle_buttons(message):
-    is_admin = (message.chat.id == ADMIN_ID)
-    
-    if message.text == "🔎 بحث عن فيلم/مسلسل":
-        msg = bot.send_message(message.chat.id, "🎯 ابعثلي اسم الفيلم أو المسلسل الحين بأي لغة:")
-        bot.register_next_step_handler(msg, process_search)
-        
-    elif message.text == "🎲 فيلم عشوائي":
-        bot.send_chat_action(message.chat.id, 'typing')
-        random_page = random.randint(1, 20)
-        url = f"https://api.themoviedb.org/3/discover/movie?api_key={TMDB_API_KEY}&page={random_page}"
-        send_media_list(message, url, "🎲 فيلم عشوائي")
-        
-    elif message.text == "🎞️ أفلام جديدة":
-        url = f"https://api.themoviedb.org/3/movie/now_playing?api_key={TMDB_API_KEY}&language=ar"
-        send_media_list(message, url, "🎞️ أفلام جديدة في السينما")
-        
-    elif message.text == "⭐ الأكثر مشاهدة":
-        url = f"https://api.themoviedb.org/3/movie/top_rated?api_key={TMDB_API_KEY}&language=ar"
-        send_media_list(message, url, "⭐ الأكثر مشاهدة وتقييماً")
-        
-    elif message.text == "📺 مسلسلات":
-        url = f"https://api.themoviedb.org/3/tv/popular?api_key={TMDB_API_KEY}&language=ar"
-        send_media_list(message, url, "📺 مسلسلات مشهورة", is_tv=True)
-        
-    elif message.text == "🎭 حسب التصنيف":
-        markup = types.InlineKeyboardMarkup(row_width=2)
-        genres = {"أكشن 💥": 28, "كوميدي 😂": 35, "رعب 💀": 27, "دراما 🎭": 18, "رومانسية ❤️": 10749}
-        buttons = [types.InlineKeyboardButton(name, callback_data=f"genre_{id}") for name, id in genres.items()]
-        markup.add(*buttons)
-        bot.send_message(message.chat.id, "🎭 اختر التصنيف المفضّل لديك:", reply_markup=markup)
-        
-    elif message.text == "❤️ أفلامي المحفوظة":
-        show_favorites(message)
-        
-    elif message.text == "🧑‍💻 لوحة تحكم الأدمن" and is_admin:
-        show_admin_panel(message)
-
-# 🔍 دالة معالجة البحث المباشر
-def process_search(message):
+def search_media(message):
     query = message.text
+    bot.send_chat_action(message.chat.id, 'typing')
     url = f"https://api.themoviedb.org/3/search/multi?api_key={TMDB_API_KEY}&query={query}"
-    send_media_list(message, url, f"🔎 نتائج البحث عن: {query}", is_multi=True)
-
-# 🎬 دالة جلب وإرسال الأفلام للمستخدم بشكل منظم ومحمي بالقصة والبوستر
-def send_media_list(message, url, section_title, is_tv=False, is_multi=False):
+    
     try:
         response = requests.get(url).json()
         results = response.get("results", [])
         if not results:
-            bot.send_message(message.chat.id, "❌ لم يتم العثور على نتائج حالياً.")
+            bot.reply_to(message, "❌ No results found!")
             return
-            
-        bot.send_message(message.chat.id, f"🍿 **{section_title}** 🍿", parse_mode="Markdown")
-        
-        # نحددوا فقط أول 3 نتائج باش ما يصرّاش ضغط
-        if is_multi:
-            valid = [r for r in results if r.get("media_type") in ["movie", "tv"]][:3]
-        else:
-            valid = results[:3]
+
+        valid = [r for r in results if r.get("media_type") in ["movie", "tv"]][:3]
+        if not valid:
+            bot.reply_to(message, "❌ No matched movies or series.")
+            return
 
         for media in valid:
             media_id = media["id"]
-            m_type = media.get("media_type", "tv" if is_tv else "movie")
+            media_type = media["media_type"]
             title = media.get("title") or media.get("name")
             overview = media.get("overview")
 
-            if not overview:
-                detail_url = f"https://api.themoviedb.org/3/{m_type}/{media_id}?api_key={TMDB_API_KEY}&language=en"
-                overview = requests.get(detail_url).json().get('overview', "No overview available.")
+            if not overview or overview == "":
+                detail_url = f"https://api.themoviedb.org/3/{media_type}/{media_id}?api_key={TMDB_API_KEY}&language=en"
+                details = requests.get(detail_url).json()
+                overview = details.get('overview', "No overview available.")
 
             poster = media.get("poster_path")
-            watch_url = f"{VERCEL_SITE_URL}watch.html?id={media_id}&type={m_type}"
+            watch_url = f"{VERCEL_SITE_URL}watch.html?id={media_id}&type={media_type}"
 
-            kb = types.InlineKeyboardMarkup(row_width=2)
-            btn_watch = types.InlineKeyboardButton("🎬 مشاهدة مباشرة", url=watch_url)
-            # زر الحفظ في المفضلة عبر نظام الـ Callback
-            btn_save = types.InlineKeyboardButton("❤️ حفظ في المفضلة", callback_data=f"save_{media_id}_{m_type}_{title[:15]}")
-            kb.add(btn_watch)
-            kb.add(btn_save)
+            kb = types.InlineKeyboardMarkup()
+            kb.add(types.InlineKeyboardButton("🎬 Watch Now", url=watch_url))
 
-            text = f"📌 **{title}**\n\n📝 **القصة:** {overview}"
+            type_label = "🎬 Movie" if media_type == "movie" else "📺 Series"
+            text = f"{type_label}: **{title}**\n\n📝 **Story:** {overview}"
+
             if poster:
-                bot.send_photo(message.chat.id, f"https://image.tmdb.org/t/p/w500{poster}", caption=text[:1024], reply_markup=kb, parse_mode="Markdown")
+                img = f"https://image.tmdb.org/t/p/w500{poster}"
+                bot.send_photo(message.chat.id, img, caption=text, reply_markup=kb, parse_mode="Markdown")
             else:
-                bot.send_message(message.chat.id, text[:4000], reply_markup=kb, parse_mode="Markdown")
+                bot.send_message(message.chat.id, text, reply_markup=kb, parse_mode="Markdown")
     except Exception as e:
-        bot.send_message(message.chat.id, "⚠️ حدث مشكل أثناء جلب البيانات.")
+        bot.reply_to(message, "⚠️ Error, try again later.")
 
-# 🔄 معالجة أزرار الـ Inline (التصنيفات، الحفظ)
-@bot.callback_query_handler(func=lambda call: True)
-def handle_callback(call):
-    if call.data.startswith("genre_"):
-        genre_id = call.data.split("_")[1]
-        url = f"https://api.themoviedb.org/3/discover/movie?api_key={TMDB_API_KEY}&with_genres={genre_id}&language=ar"
-        bot.delete_message(call.message.chat.id, call.message.message_id)
-        send_media_list(call.message, url, "🎭 أفلام حسب اختيارك")
-        
-    elif call.data.startswith("save_"):
-        _, m_id, m_type, m_title = call.data.split("_", 3)
-        conn = sqlite3.connect("saraflix.db")
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO favorites VALUES (?, ?, ?, ?)", (call.message.chat.id, m_id, m_title, m_type))
-        conn.commit()
-        conn.close()
-        bot.answer_callback_query(call.id, f"🌟 تم حفظ '{m_title}' في مفضلتكِ!")
-
-# ❤️ عرض القائمة المحفوظة للمستخدم
-def show_favorites(message):
-    conn = sqlite3.connect("saraflix.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT media_id, title, media_type FROM favorites WHERE user_id = ?", (message.chat.id,))
-    rows = cursor.fetchall()
-    conn.close()
-    
-    if not rows:
-        bot.send_message(message.chat.id, "❤️ قائمتكِ فارغة حالياً! احفظي بعض الأفلام أولاً.")
-        return
-        
-    markup = types.InlineKeyboardMarkup()
-    for row in rows:
-        watch_url = f"{VERCEL_SITE_URL}watch.html?id={row[0]}&type={row[2]}"
-        markup.add(types.InlineKeyboardButton(f"🎬 {row[1]} ({row[2]})", url=watch_url))
-        
-    bot.send_message(message.chat.id, "🗂️ **أفلامكِ ومسلسلاتكِ المحفوظة:**", reply_markup=markup, parse_mode="Markdown")
-
-# 🧑‍💻 أزرار لوحة تحكم الأدمن (مخفية وخاصة بالأدمن فقط)
-def show_admin_panel(message):
-    markup = types.InlineKeyboardMarkup(row_width=1)
-    btn_stats = types.InlineKeyboardButton("📊 إحصائيات البوت", callback_data="admin_stats")
-    btn_broad = types.InlineKeyboardButton("📢 إرسال إعلان للمستخدمين (Broadcast)", callback_data="admin_broadcast")
-    markup.add(btn_stats, btn_broad)
-    bot.send_message(message.chat.id, "⚙️ **مرحباً بكِ في لوحة التحكم الخاصة بالأدمن:**", reply_markup=markup, parse_mode="Markdown")
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith("admin_"))
-def handle_admin_callback(call):
-    if call.message.chat.id != ADMIN_ID:
-        return
-        
-    if call.data == "admin_stats":
-        conn = sqlite3.connect("saraflix.db")
-        cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM users")
-        user_count = cursor.fetchone()[0]
-        cursor.execute("SELECT COUNT(*) FROM favorites")
-        fav_count = cursor.fetchone()[0]
-        conn.close()
-        
-        stats_text = f"📊 **إحصائيات SaraFlix:**\n\n👥 عدد المشتركين الكلي: {user_count}\n⭐ إجمالي الأفلام المحفوظة: {fav_count}"
-        bot.send_message(call.message.chat.id, stats_text, parse_mode="Markdown")
-        
-    elif call.data == "admin_broadcast":
-        msg = bot.send_message(call.message.chat.id, "📢 اكتب رسالة الإعلان (نص فقط) ليتم إرسالها لجميع المستخدمين:")
-        bot.register_next_step_handler(msg, start_broadcast)
-
-def start_broadcast(message):
-    if message.chat.id != ADMIN_ID: return
-    text_to_send = message.text
-    
-    conn = sqlite3.connect("saraflix.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT user_id FROM users")
-    users = cursor.fetchall()
-    conn.close()
-    
-    success = 0
-    bot.send_message(message.chat.id, f"⏳ جاري بدء الإرسال إلى {len(users)} مستخدم...")
-    for u in users:
-        try:
-            bot.send_message(u[0], text_to_send)
-            success += 1
-            time.sleep(0.2) # تجنب الحظر من التيليجرام
-        except:
-            pass
-    bot.send_message(message.chat.id, f"✅ تم الإرسال بنجاح إلى {success} مستخدم!")
-
-# 🔥 حماية واستمرار التشغيل
-print("⚡ SaraFlix Pro is running perfectly...")
+print("⚡ Bot is running successfully...")
 while True:
     try:
         bot.infinity_polling()
     except Exception as e:
         time.sleep(5)
+
+هذا مليح؟
