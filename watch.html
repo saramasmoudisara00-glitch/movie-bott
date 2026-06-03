@@ -1,81 +1,81 @@
-Import telebot
-import requests
-import time
-from telebot import types
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Watch Movie</title>
 
-BOT_TOKEN = "8605809944:AAFX_9TlV2CBfISMpAZJrtR25kU1DB2uIP4"
-TMDB_API_KEY = "2df7966b11c2fa17ff9606fd8eb710fb"
-VERCEL_SITE_URL = "https://movie-bott-five.vercel.app/"
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      color: white;
+      font-family: Arial;
+      text-align: center;
+    }
 
-bot = telebot.TeleBot(BOT_TOKEN)
+    .title {
+      font-size: 22px;
+      padding: 15px;
+      color: #E50914;
+      font-weight: bold;
+    }
 
-# 🌐 برمجة زر المنيو تلقائياً لفتح الموقع كـ Web App
-try:
-    bot.set_chat_menu_button(
-        menu_button=types.MenuButtonWebApp(
-            type="web_app",
-            text="SaraFlix 🍿",
-            web_app=types.WebAppInfo(url=VERCEL_SITE_URL)
-        )
-    )
-    print("✅ Menu Button set successfully!")
-except Exception as e:
-    print("Error setting menu button:", e)
+    iframe {
+      width: 100%;
+      height: 85vh;
+      border: none;
+    }
 
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
-    welcome_text = "🎬 **SaraFlix** 🍿\n\nSend me any movie or series name!"
-    bot.reply_to(message, welcome_text, parse_mode="Markdown")
+    .btn {
+      display: inline-block;
+      margin: 15px;
+      padding: 10px 15px;
+      background: #e50914;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+    }
+  </style>
+</head>
 
-@bot.message_handler(func=lambda message: True)
-def search_media(message):
-    query = message.text
-    bot.send_chat_action(message.chat.id, 'typing')
-    url = f"https://api.themoviedb.org/3/search/multi?api_key={TMDB_API_KEY}&query={query}"
-    
-    try:
-        response = requests.get(url).json()
-        results = response.get("results", [])
-        if not results:
-            bot.reply_to(message, "❌ No results found!")
-            return
+<body>
 
-        valid = [r for r in results if r.get("media_type") in ["movie", "tv"]][:3]
-        if not valid:
-            bot.reply_to(message, "❌ No matched movies or series.")
-            return
+<div class="title" id="title">Loading...</div>
 
-        for media in valid:
-            media_id = media["id"]
-            media_type = media["media_type"]
-            title = media.get("title") or media.get("name")
-            overview = media.get("overview")
+<iframe id="player" allowfullscreen></iframe>
 
-            if not overview or overview == "":
-                detail_url = f"https://api.themoviedb.org/3/{media_type}/{media_id}?api_key={TMDB_API_KEY}&language=en"
-                details = requests.get(detail_url).json()
-                overview = details.get('overview', "No overview available.")
+<a id="backup" class="btn" target="_blank">▶️ Watch in browser</a>
 
-            poster = media.get("poster_path")
-            watch_url = f"{VERCEL_SITE_URL}watch.html?id={media_id}&type={media_type}"
+<script>
+  const params = new URLSearchParams(window.location.search);
 
-            kb = types.InlineKeyboardMarkup()
-            kb.add(types.InlineKeyboardButton("🎬 Watch Now", url=watch_url))
+  const id = params.get("id");
+  const type = params.get("type") || "movie";
 
-            type_label = "🎬 Movie" if media_type == "movie" else "📺 Series"
-            text = f"{type_label}: **{title}**\n\n📝 **Story:** {overview}"
+  const TMDB_KEY = "2df7966b11c2fa17ff9606fd8eb710fb";
 
-            if poster:
-                img = f"https://image.tmdb.org/t/p/w500{poster}"
-                bot.send_photo(message.chat.id, img, caption=text, reply_markup=kb, parse_mode="Markdown")
-            else:
-                bot.send_message(message.chat.id, text, reply_markup=kb, parse_mode="Markdown")
-    except Exception as e:
-        bot.reply_to(message, "⚠️ Error, try again later.")
+  if (!id) {
+    document.getElementById("title").innerText = "خطأ: لا يوجد فيلم";
+  } else {
 
-print("⚡ Bot is running successfully...")
-while True:
-    try:
-        bot.infinity_polling()
-    except Exception as e:
-        time.sleep(5)
+    const embedUrl = `https://vidsrc.icu/embed/${type}/${id}`;
+
+    document.getElementById("player").src = embedUrl;
+
+    document.getElementById("backup").href =
+      `https://www.google.com/search?q=${type}+${id}+watch+online`;
+
+    fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_KEY}&language=ar`)
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("title").innerText =
+          data.title || data.name || "Watch Movie";
+      })
+      .catch(() => {
+        document.getElementById("title").innerText = "Watch Movie";
+      });
+  }
+</script>
+
+</body>
+</html>
