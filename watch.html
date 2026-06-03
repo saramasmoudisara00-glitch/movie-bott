@@ -3,67 +3,78 @@ import requests
 import time
 from telebot import types
 
-BOT_TOKEN = "حطي_TOKEN_الجديد"
-TMDB_API_KEY = "حطي_TMDB_KEY"
+# 🔑 الإعدادات الصحيحة والمضبوطة بدون أخطاء
+BOT_TOKEN = "8605809944:AAFX_9TlV2CBfISMpAZJrtR25kU1DB2uIP4"
+TMDB_API_KEY = "2df7966b11c2fa17ff9606fd8eb710fb"
 VERCEL_SITE_URL = "https://movie-bott-five.vercel.app/watch.html"
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    welcome_text = "🎬 مرحبا بيك في SaraFlix!\nابعث اسم أي فيلم أو مسلسل 🍿"
-    bot.reply_to(message, welcome_text)
+    welcome_text = "🎬 **مرحباً بكِ في SaraFlix!** 🍿\n\nابعتيلي اسم أي فيلم أو مسلسل بأي لغة حابتها وراح نخرجهولك فوراً! ✨"
+    bot.reply_to(message, welcome_text, parse_mode="Markdown")
 
 @bot.message_handler(func=lambda message: True)
 def search_media(message):
     query = message.text
-
     bot.send_chat_action(message.chat.id, 'typing')
-
-    url = f"https://api.themoviedb.org/3/search/multi?api_key={TMDB_API_KEY}&query={query}&language=ar"
-
+    
+    # البحث العام بأي لغة
+    url = f"https://api.themoviedb.org/3/search/multi?api_key={TMDB_API_KEY}&query={query}"
+    
     try:
         response = requests.get(url).json()
         results = response.get("results", [])
 
         if not results:
-            bot.reply_to(message, "❌ ما لقيتش نتائج")
+            bot.reply_to(message, "❌ للأسف مالقيت والو! تأكدي من الاسم.")
             return
 
+        # جلب أول 3 نتائج مطابقة (أفلام أو مسلسلات)
         valid = [r for r in results if r.get("media_type") in ["movie", "tv"]][:3]
+
+        if not valid:
+            bot.reply_to(message, "❌ لم يتم العثور على نتائج مطابقة.")
+            return
 
         for media in valid:
             media_id = media["id"]
             media_type = media["media_type"]
 
             title = media.get("title") or media.get("name")
-            overview = media.get("overview") or "لا يوجد وصف"
+            overview = media.get("overview")
+
+            # ميزة ذكية: إذا كان الوصف العربي فارغ، نجيبوه بالإنجليزية عشان ما يبقاش فارغ
+            if not overview or overview == "":
+                detail_url = f"https://api.themoviedb.org/3/{media_type}/{media_id}?api_key={TMDB_API_KEY}&language=en"
+                details = requests.get(detail_url).json()
+                overview = details.get('overview', "لا يوجد وصف متاح حالياً.")
 
             poster = media.get("poster_path")
             watch_url = f"{VERCEL_SITE_URL}?id={media_id}&type={media_type}"
 
             kb = types.InlineKeyboardMarkup()
-            kb.add(types.InlineKeyboardButton("🎬 مشاهدة", url=watch_url))
+            kb.add(types.InlineKeyboardButton("🎬 مشاهدة مباشرة", url=watch_url))
 
-            text = f"🎬 {title}\n\n📝 {overview}"
+            type_label = "🎬 فيلم" if media_type == 'movie' else "📺 مسلسل"
+            text = f"{type_label}: **{title}**\n\n📝 **القصة:** {overview}"
 
             if poster:
                 img = f"https://image.tmdb.org/t/p/w500{poster}"
-                bot.send_photo(message.chat.id, img, caption=text, reply_markup=kb)
+                bot.send_photo(message.chat.id, img, caption=text, reply_markup=kb, parse_mode="Markdown")
             else:
-                bot.send_message(message.chat.id, text, reply_markup=kb)
+                bot.send_message(message.chat.id, text, reply_markup=kb, parse_mode="Markdown")
 
     except Exception as e:
-        print(e)
-        bot.reply_to(message, "⚠️ صرا مشكل، عاودي لاحقاً")
+        print("حدث خطأ أثناء البحث:", e)
+        bot.reply_to(message, "⚠️ صرى مشكل صغير في الاتصال، عاودي جربي بعد قليل!")
 
-
-# 🔥 حماية Termux (ما يطيحش البوت)
-
+# 🔥 سكريبت الحماية الخاص بكِ (يمنع توقف البوت في Termux)
+print("⚡ البوت المطور شغال الآن بحماية التوقف...")
 while True:
     try:
-        print("Bot is running...")
         bot.infinity_polling()
     except Exception as e:
-        print("Error:", e)
+        print("خطأ في الاتصال، إعادة التشغيل بعد 5 ثوانٍ...", e)
         time.sleep(5)
