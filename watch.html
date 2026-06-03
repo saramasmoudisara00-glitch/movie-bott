@@ -20,7 +20,19 @@
       font-weight: bold;
     }
 
-   <iframe id="player" allowfullscreen></iframe>
+    iframe {
+      width: 100%;
+      height: 85vh;
+      border: none;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="title" id="title">Loading...</div>
+
+<iframe id="player" allowfullscreen></iframe>
 
 <script>
   const params = new URLSearchParams(window.location.search);
@@ -29,11 +41,15 @@
   const type = params.get("type") || "movie";
 
   if (id) {
-    // جرّبي سيرفر واحد مستقر
     const embedUrl = `https://multiembed.mov/?video_id=${id}`;
 
     document.getElementById("player").src = embedUrl;
+
+    document.getElementById("title").innerText = "Now Playing 🎬";
   } else {
-    document.body.innerHTML = "No movie selected";
+    document.body.innerHTML = "<h2 style='color:white'>No movie selected</h2>";
   }
 </script>
+
+</body>
+</html>
