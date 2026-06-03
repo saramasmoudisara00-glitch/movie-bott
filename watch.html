@@ -20,31 +20,7 @@
       font-weight: bold;
     }
 
-    iframe {
-      width: 100%;
-      height: 85vh;
-      border: none;
-    }
-
-    .btn {
-      display: inline-block;
-      margin: 15px;
-      padding: 10px 15px;
-      background: #e50914;
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-    }
-  </style>
-</head>
-
-<body>
-
-<div class="title" id="title">Loading...</div>
-
-<iframe id="player" allowfullscreen></iframe>
-
-<a id="backup" class="btn" target="_blank">▶️ Watch in browser</a>
+   <iframe id="player" allowfullscreen></iframe>
 
 <script>
   const params = new URLSearchParams(window.location.search);
@@ -52,30 +28,12 @@
   const id = params.get("id");
   const type = params.get("type") || "movie";
 
-  const TMDB_KEY = "2df7966b11c2fa17ff9606fd8eb710fb";
-
-  if (!id) {
-    document.getElementById("title").innerText = "خطأ: لا يوجد فيلم";
-  } else {
-
-    const embedUrl = `https://vidsrc.icu/embed/${type}/${id}`;
+  if (id) {
+    // جرّبي سيرفر واحد مستقر
+    const embedUrl = `https://multiembed.mov/?video_id=${id}`;
 
     document.getElementById("player").src = embedUrl;
-
-    document.getElementById("backup").href =
-      `https://www.google.com/search?q=${type}+${id}+watch+online`;
-
-    fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_KEY}&language=ar`)
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById("title").innerText =
-          data.title || data.name || "Watch Movie";
-      })
-      .catch(() => {
-        document.getElementById("title").innerText = "Watch Movie";
-      });
+  } else {
+    document.body.innerHTML = "No movie selected";
   }
 </script>
-
-</body>
-</html>
