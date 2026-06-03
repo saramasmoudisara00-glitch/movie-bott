@@ -1,26 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Watch Movie & Series</title>
+  <style>
+    body { margin: 0; background: black; color: white; font-family: Arial; text-align: center; }
+    .container { padding: 20px; }
+    iframe { width: 100%; height: 80vh; border: none; }
+    .title { font-size: 24px; margin: 10px 0; font-weight: bold; color: #E50914; }
+    .back { color: white; text-decoration: none; display: inline-block; margin-top: 10px; background: red; padding: 8px 15px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="title" id="title">Loading...</div>
+  <iframe id="player" allowfullscreen></iframe>
+  <br>
+  <a class="back" href="/">⬅ Back</a>
+</div>
+
 <script>
   const params = new URLSearchParams(window.location.search);
   const id = params.get("id");
+  const type = params.get("type") || "movie"; // يجيب إذا فيلم movie أو مسلسل tv
 
   const TMDB_API_KEY = "2df7966b11c2fa17ff9606fd8eb710fb";
 
   if (!id) {
-    document.getElementById("title").innerText = "خطأ: لم يتم تحديد فيلم!";
+    document.getElementById("title").innerText = "خطأ: لم يتم تحديد محتوى!";
   } else {
+    // 🎬 تشغيل الفيلم أو المسلسل تلقائياً على حسب النوع تعه
+    // المسلسلات تحتاج يتزاد لها رقم الموسم والحلقة، ديفو نديرو الموسم 1 الحلقة 1
+    let embedUrl = `https://vidsrc.icu/embed/${type}/${id}`;
+    if (type === "tv") {
+      embedUrl += "/1/1"; 
+    }
+    document.getElementById("player").src = embedUrl;
 
-    // 🎬 تشغيل الفيلم
-    document.getElementById("player").src =
-      "https://vidsrc.icu/embed/movie/" + id;
-
-    // 📌 جلب اسم الفيلم
-    fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}&language=ar`)
+    // 📌 جلب اسم الفيلم/المسلسل (نجربو العربية، وإذا ماكاش يجيب الإنجليزية تلقائياً)
+    fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}&language=ar`)
       .then(res => res.json())
       .then(data => {
-        document.getElementById("title").innerText =
-          data.title || "مشاهدة الفيلم";
+        let name = data.title || data.name;
+        if (!name) {
+          // إذا ما لقاش اسم بالعربية، يجيب الإنجليزي الأصل تعه
+          fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`)
+            .then(res2 => res2.json())
+            .then(data2 => {
+              document.getElementById("title").innerText = data2.title || data2.name || "مشاهدة";
+            });
+        } else {
+          document.getElementById("title").innerText = name;
+        }
       })
       .catch(() => {
-        document.getElementById("title").innerText = "مشاهدة الفيلم";
+        document.getElementById("title").innerText = "مشاهدة";
       });
   }
 </script>
+
+</body>
+</html>
