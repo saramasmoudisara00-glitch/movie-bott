@@ -9,7 +9,6 @@ VERCEL_SITE_URL = "https://movie-bott-five.vercel.app/"
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# 🌐 برمجة زر المنيو تلقائياً لفتح الموقع كـ Web App
 try:
     bot.set_chat_menu_button(
         menu_button=types.MenuButtonWebApp(
@@ -18,21 +17,19 @@ try:
             web_app=types.WebAppInfo(url=VERCEL_SITE_URL)
         )
     )
-    print("✅ Menu Button set successfully!")
-except Exception as e:
-    print("Error setting menu button:", e)
+except:
+    pass
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    welcome_text = "🎬 **SaraFlix** 🍿\n\nSend me any movie or series name!"
-    bot.reply_to(message, welcome_text, parse_mode="Markdown")
+    bot.reply_to(message, "🎬 **SaraFlix** 🍿\n\nSend me any movie or series name!", parse_mode="Markdown")
 
 @bot.message_handler(func=lambda message: True)
 def search_media(message):
     query = message.text
     bot.send_chat_action(message.chat.id, 'typing')
     url = f"https://api.themoviedb.org/3/search/multi?api_key={TMDB_API_KEY}&query={query}"
-
+    
     try:
         response = requests.get(url).json()
         results = response.get("results", [])
@@ -70,12 +67,12 @@ def search_media(message):
                 bot.send_photo(message.chat.id, img, caption=text, reply_markup=kb, parse_mode="Markdown")
             else:
                 bot.send_message(message.chat.id, text, reply_markup=kb, parse_mode="Markdown")
-    except Exception as e:
+    except:
         bot.reply_to(message, "⚠️ Error, try again later.")
 
-print("⚡ Bot is running successfully...")
+print("Bot is running...")
 while True:
     try:
         bot.infinity_polling()
-    except Exception as e:
+    except:
         time.sleep(5)
