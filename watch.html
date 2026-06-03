@@ -1,54 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Watch Movie</title>
+<meta charset="UTF-8">
+<title>Watch Movie</title>
 
-  <style>
-    body {
-      margin: 0;
-      background: black;
-      color: white;
-      font-family: Arial;
-      text-align: center;
-    }
+<style>
+body {
+  margin: 0;
+  background: black;
+  color: white;
+  text-align: center;
+  font-family: Arial;
+}
 
-    .title {
-      font-size: 22px;
-      padding: 15px;
-      color: #E50914;
-      font-weight: bold;
-    }
+.title {
+  padding: 10px;
+  font-size: 20px;
+  color: #e50914;
+}
 
-    iframe {
-      width: 100%;
-      height: 85vh;
-      border: none;
-    }
-  </style>
+iframe {
+  width: 100%;
+  height: 85vh;
+  border: none;
+}
+</style>
 </head>
 
 <body>
 
-<div class="title" id="title">Loading...</div>
+<div class="title">🎬 Loading...</div>
 
-<iframe id="player" allowfullscreen></iframe>
+<iframe id="player"></iframe>
 
 <script>
-  const params = new URLSearchParams(window.location.search);
+const params = new URLSearchParams(window.location.search);
 
-  const id = params.get("id");
-  const type = params.get("type") || "movie";
+const id = params.get("id");
+const type = params.get("type") || "movie";
 
-  if (id) {
-    const embedUrl = `https://multiembed.mov/?video_id=${id}`;
+if (id) {
+  // 🎬 مصدر واحد بسيط (أكثر استقرار)
+  const url = `https://multiembed.mov/?video_id=${id}`;
 
-    document.getElementById("player").src = embedUrl;
+  document.getElementById("player").src = url;
 
-    document.getElementById("title").innerText = "Now Playing 🎬";
-  } else {
-    document.body.innerHTML = "<h2 style='color:white'>No movie selected</h2>";
-  }
+  document.querySelector(".title").innerText = "Now Playing 🎬";
+} else {
+  document.body.innerHTML = "<h2>No movie selected</h2>";
+}
 </script>
 
 </body>
